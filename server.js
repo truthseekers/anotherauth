@@ -126,6 +126,87 @@ app.post("/register", async (req, res) => {
   }
 });
 
+app.post("/login", async (req, res) => {
+  // console.log("regist HIT YO");
+  console.log("login req: ", req.body);
+  // const hashedPassword = await bcrypt.hash(req.body.password, 10);
+  //  const user = users.find((user) => (user.name = req.query.name));
+  const user = await User.findOne({ username: req.body.username });
+  console.log("user to log in is: ", user);
+  if (user == null) {
+    console.log("user is null.");
+    return res.status(400).send("cannot find user");
+  }
+
+  if (await bcrypt.compare(req.body.password, user.password)) {
+    console.log("password matches!");
+
+    const token = jwt.sign({ _id: user._id }, APP_SECRET);
+    const responseObject = {
+      user: {
+        _id: user._id,
+        username: user.username,
+        token: token,
+      },
+    };
+
+    res.send(JSON.stringify(responseObject));
+  }
+
+  try {
+    if (await bcrypt.compare(req.body.password, user.password)) {
+      res.send("success");
+    } else {
+      res.send("not allowed");
+    }
+  } catch {
+    res.status(500).send();
+  }
+  // const newUser = new User({
+  //   username: req.body.username,
+  //   password: hashedPassword,
+  //   email: req.body.username + "@" + req.body.username + ".com",
+  // });
+
+  // // console.log("newUser: ", newUser);
+
+  // const token = jwt.sign({ _id: newUser._id }, APP_SECRET);
+  // console.log("token from jwt.sign: ", "|" + token + "|");
+  // const responseObject = {
+  //   user: {
+  //     _id: newUser._id,
+  //     username: newUser.username,
+  //     token: token,
+  //   },
+  // };
+
+  // newUser.save(function (err, user) {
+  //   if (err) {
+  //     // console.log("There was an error: ", err);
+  //     return err;
+  //   } else {
+  //     // console.log("No error. check db for user");
+  //   }
+  // });
+
+  // res.send(JSON.stringify(responseObject));
+
+  // // res.send(JSON.stringify(sentData));
+  // // const user = users.find((user) => (user.name = req.query.name));
+  // // if (user == null) {
+  // //   return res.status(400).send("cannot find user");
+  // // }
+  // try {
+  //   if (await bcrypt.compare(req.body.password, user.password)) {
+  //     res.send("success");
+  //   } else {
+  //     res.send("not allowed");
+  //   }
+  // } catch {
+  //   res.status(500).send();
+  // }
+});
+
 app.post("/users/login", async (req, res) => {
   const user = users.find((user) => (user.name = req.query.name));
   if (user == null) {
