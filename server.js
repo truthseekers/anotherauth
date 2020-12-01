@@ -55,13 +55,22 @@ app.get("/bootstrap", async (req, res) => {
 
   // console.log(": ", jwtResult);
   const user = await User.findById(_id); //User.find({ _id });
+  console.log("user NOT tojson: ", user);
   console.log("user (toJSON) is: ", user.toJSON());
 
+  user.id = user._id;
+  user.token = token;
   // console.log("received back from jwt after verification: ", jwtResult);
+  console.log("token: ", token);
+  console.log("users token: ", user.token);
 
   const returnObj = {
     listItems: [],
-    user: { ...user, token },
+    user: {
+      id: user.id,
+      token: token,
+      username: user.username,
+    },
   };
   // console.log("returning hardcoded Bob");
   res.send(JSON.stringify(returnObj));
