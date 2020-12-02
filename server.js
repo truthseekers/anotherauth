@@ -58,12 +58,13 @@ app.post("/users", async (req, res) => {
 // publisher
 // synopsis
 
-app.get("/books", (req, res) => {
-  console.log("req obj: req.body: ", req.query);
+app.get("/books", async (req, res) => {
+  console.log("hit books");
+  // console.log("req obj: req.body: ", req.query);
   let searchQuery = req.query.query;
   if (searchQuery) {
     searchQuery = searchQuery.replace(" ", "+");
-    console.log("searchQuery: ", searchQuery);
+    // console.log("searchQuery: ", searchQuery);
   } else {
     let random = [
       "love",
@@ -97,7 +98,7 @@ app.get("/books", (req, res) => {
         // console.log("title: ", elem.volumeInfo.title);
         // console.log("thumbnail: ", elem.volumeInfo.imageLinks.thumbnail);
         // console.log("author: ", elem.volumeInfo.authors);
-        // console.log("id: ", elem.id);
+        console.log("needed id: ", elem.id);
         // console.log("pageCount: ", elem.volumeInfo.pageCount);
         // console.log("publisher: ", elem.volumeInfo.publisher);
         // console.log("synopsis: ", elem.volumeInfo.description);
@@ -119,20 +120,119 @@ app.get("/books", (req, res) => {
   // res.send(JSON.stringify(books));
 });
 
-app.get("/list-items", (req, res) => {
-  console.log("in list-items server");
+app.get("/list-items", async (req, res) => {
+  // console.log("in list-items server");
+  let booksList = [];
+  const token = req.headers.authorization.replace("Bearer ", "");
+  // console.log("token: ", "|" + token + "|");
+  const { _id } = jwt.verify(token, APP_SECRET);
+
+  const user = await User.findById(_id); //User.find({ _id });
+
+  // console.log("users book with dynamic data: ", user.books[0]);
+
+  user.books.forEach(function (elem) {
+    let listItem = {
+      book: {
+        title: "Lord of the rings",
+        author: "J R Tolkien",
+        coverImageUrl:
+          "https://images-na.ssl-images-amazon.com/images/I/51r6XIPWmoL._SX331_BO1,204,203,200_.jpg",
+        id: "618645616",
+        pageCount: 1178,
+        publisher: "Houghton Mifflen Harcourt",
+        synopsis: "everyone wants a ring",
+      },
+      bookId: elem.bookId,
+      finishDate: elem.finishDate,
+      // id: "26023228424",
+      notes: elem.notes,
+      ownerId: elem.ownerId,
+      rating: elem.rating,
+      startDate: elem.startDate,
+    };
+    // console.log("list item here: ", listItem);
+    booksList.push(listItem);
+  });
+
+  console.log("length of array: ", booksList.length);
+
+  // let myReq = await axios.get(
+  //   // "https://www.googleapis.com/books/v1/volumes?q=poop"
+  //   "https://www.googleapis.com/books/v1/volumes/2jtvmYDrhoQC"
+  // );
+
+  // console.log("my reading list yup: ", myReq.data);
+
+  // const currentBook = await axios.get(
+  //   `https://www.googleapis.com/books/v1/volumes/${user.books[0].bookId}`
+  // );
+
+  // console.log("currentBook: ", currentBook);
+
   const listItems = {
-    listItems: ["yeah buddy"],
+    listItems: booksList,
   };
+
+  res.send(JSON.stringify(listItems));
+});
+
+// book: {
+//   title: "Lord of the rings",
+//   author: "J R Tolkien",
+//   coverImageUrl:
+//     "https://images-na.ssl-images-amazon.com/images/I/51r6XIPWmoL._SX331_BO1,204,203,200_.jpg",
+//   id: "618645616",
+//   pageCount: 1178,
+//   publisher: "Houghton Mifflen Harcourt",
+//   synopsis: "everyone wants a ring",
+// },
+
+app.post("/list-items", async (req, res) => {
+  // console.log("in list-items server hello?");
+
+  const token = req.headers.authorization.replace("Bearer ", "");
+  // console.log("token: ", "|" + token + "|");
+  const { _id } = jwt.verify(token, APP_SECRET);
+  // console.log("users _id is: ", _id);
+  const user = await User.findById(_id); //User.find({ _id });
+
+  let newListItem = {
+    bookId: "618645616",
+    finishDate: null,
+    id: "26023228424",
+    notes: "Cool book yo",
+    ownerId: "5fc6aca2355c5920ccb210c7",
+    rating: -1,
+    startDate: 1606932788305,
+  };
+
+  user.books.push(newListItem);
+  user.save();
+  // console.log("User saved!");
+  const listItems = {
+    listItems: [
+      {
+        bookId: "618645616",
+        finishDate: null,
+        id: "26023228424",
+        notes: "Cool book yo",
+        ownerId: "5fc6aca2355c5920ccb210c7",
+        rating: -1,
+        startDate: 1606932788305,
+      },
+    ],
+  };
+
   res.send(JSON.stringify(listItems));
 });
 
 app.get("/bootstrap", async (req, res) => {
-  console.log("top of /bootstrap");
+  // console.log("top of /bootstrap");
   const token = req.headers.authorization.replace("Bearer ", "");
-  console.log("token in bootstrap: ", "|" + token + "|");
+  // console.log("token in bootstrap: ", "|" + token + "|");
   const { _id } = jwt.verify(token, APP_SECRET);
-
+  // console.log("id of user: ", _id);
   const user = await User.findById(_id); //User.find({ _id });
 
   user.id = user._id;
@@ -146,7 +246,7 @@ app.get("/bootstrap", async (req, res) => {
       username: user.username,
     },
   };
-  console.log("Ready to send er back!");
+  // console.log("Ready to send er back!");
   res.send(JSON.stringify(returnObj));
 });
 
