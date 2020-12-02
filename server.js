@@ -59,8 +59,31 @@ app.post("/users", async (req, res) => {
 // synopsis
 
 app.get("/books", (req, res) => {
+  console.log("req obj: req.body: ", req.query);
+  let searchQuery = req.query.query;
+  if (searchQuery) {
+    searchQuery = searchQuery.replace(" ", "+");
+    console.log("searchQuery: ", searchQuery);
+  } else {
+    let random = [
+      "love",
+      "war",
+      "hate",
+      "economics",
+      "sea",
+      "murder",
+      "physics",
+      "film",
+      "environment",
+      "collapse",
+      "space",
+    ];
+    const randomItem = random[Math.floor(Math.random() * random.length)];
+    searchQuery = randomItem;
+  }
+
   axios
-    .get("https://www.googleapis.com/books/v1/volumes?q=lion")
+    .get(`https://www.googleapis.com/books/v1/volumes?q=${searchQuery}`)
     .then(function (response) {
       // console.log("repsonse from google books: ", response.data.items);
       const volumeList = response.data.items;
@@ -70,17 +93,17 @@ app.get("/books", (req, res) => {
       };
 
       volumeList.forEach(function (elem) {
-        console.log(elem);
-        console.log("title: ", elem.volumeInfo.title);
-        console.log("thumbnail: ", elem.volumeInfo.imageLinks.thumbnail);
-        console.log("author: ", elem.volumeInfo.authors);
-        console.log("id: ", elem.id);
-        console.log("pageCount: ", elem.volumeInfo.pageCount);
-        console.log("publisher: ", elem.volumeInfo.publisher);
-        console.log("synopsis: ", elem.volumeInfo.description);
+        // console.log(elem);
+        // console.log("title: ", elem.volumeInfo.title);
+        // console.log("thumbnail: ", elem.volumeInfo.imageLinks.thumbnail);
+        // console.log("author: ", elem.volumeInfo.authors);
+        // console.log("id: ", elem.id);
+        // console.log("pageCount: ", elem.volumeInfo.pageCount);
+        // console.log("publisher: ", elem.volumeInfo.publisher);
+        // console.log("synopsis: ", elem.volumeInfo.description);
         let newBook = {
           title: elem.volumeInfo.title,
-          coverImageURL: elem.volumeInfo.imageLinks.thumbnail,
+          coverImageUrl: elem.volumeInfo.imageLinks.thumbnail,
           author: elem.volumeInfo.authors,
           id: elem.id,
           pageCount: elem.volumeInfo.pageCount,
