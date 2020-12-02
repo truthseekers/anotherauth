@@ -7,6 +7,7 @@ const { User } = require("./models/user.model");
 const { response } = require("express");
 const jwt = require("jsonwebtoken");
 const APP_SECRET = "a92hqajerignve030vba";
+const axios = require("axios");
 
 const corsOptions = {
   origin: "http://localhost:3000",
@@ -47,22 +48,72 @@ app.post("/users", async (req, res) => {
   }
 });
 
+//https: //www.googleapis.com/books/v1/volumes?q=search+terms
+
+// title
+// coverImageURL
+// author
+// id
+// pageCount
+// publisher
+// synopsis
+
+app.get("/books", (req, res) => {
+  axios
+    .get("https://www.googleapis.com/books/v1/volumes?q=lion")
+    .then(function (response) {
+      // console.log("repsonse from google books: ", response.data.items);
+      const volumeList = response.data.items;
+
+      const responseObj = {
+        books: [],
+      };
+
+      volumeList.forEach(function (elem) {
+        console.log(elem);
+        console.log("title: ", elem.volumeInfo.title);
+        console.log("thumbnail: ", elem.volumeInfo.imageLinks.thumbnail);
+        console.log("author: ", elem.volumeInfo.authors);
+        console.log("id: ", elem.id);
+        console.log("pageCount: ", elem.volumeInfo.pageCount);
+        console.log("publisher: ", elem.volumeInfo.publisher);
+        console.log("synopsis: ", elem.volumeInfo.description);
+        let newBook = {
+          title: elem.volumeInfo.title,
+          coverImageURL: elem.volumeInfo.imageLinks.thumbnail,
+          author: elem.volumeInfo.authors,
+          id: elem.id,
+          pageCount: elem.volumeInfo.pageCount,
+          publisher: elem.volumeInfo.publisher,
+          synopsis: elem.volumeInfo.description,
+        };
+        responseObj.books.push(newBook);
+      });
+
+      res.send(JSON.stringify(responseObj));
+    });
+
+  // res.send(JSON.stringify(books));
+});
+
+app.get("/list-items", (req, res) => {
+  console.log("in list-items server");
+  const listItems = {
+    listItems: ["yeah buddy"],
+  };
+  res.send(JSON.stringify(listItems));
+});
+
 app.get("/bootstrap", async (req, res) => {
-  // console.log("in bootstrap. req: ", req);
+  console.log("top of /bootstrap");
   const token = req.headers.authorization.replace("Bearer ", "");
   console.log("token in bootstrap: ", "|" + token + "|");
   const { _id } = jwt.verify(token, APP_SECRET);
 
-  // console.log(": ", jwtResult);
   const user = await User.findById(_id); //User.find({ _id });
-  console.log("user NOT tojson: ", user);
-  console.log("user (toJSON) is: ", user.toJSON());
 
   user.id = user._id;
   user.token = token;
-  // console.log("received back from jwt after verification: ", jwtResult);
-  console.log("token: ", token);
-  console.log("users token: ", user.token);
 
   const returnObj = {
     listItems: [],
@@ -72,13 +123,11 @@ app.get("/bootstrap", async (req, res) => {
       username: user.username,
     },
   };
-  // console.log("returning hardcoded Bob");
+  console.log("Ready to send er back!");
   res.send(JSON.stringify(returnObj));
 });
 
 app.post("/register", async (req, res) => {
-  // console.log("regist HIT YO");
-
   const hashedPassword = await bcrypt.hash(req.body.password, 10);
 
   const newUser = new User({
@@ -87,10 +136,7 @@ app.post("/register", async (req, res) => {
     email: req.body.username + "@" + req.body.username + ".com",
   });
 
-  // console.log("newUser: ", newUser);
-
   const token = jwt.sign({ _id: newUser._id }, APP_SECRET);
-  console.log("token from jwt.sign: ", "|" + token + "|");
   const responseObject = {
     user: {
       _id: newUser._id,
@@ -101,10 +147,8 @@ app.post("/register", async (req, res) => {
 
   newUser.save(function (err, user) {
     if (err) {
-      // console.log("There was an error: ", err);
       return err;
     } else {
-      // console.log("No error. check db for user");
     }
   });
 
@@ -127,20 +171,14 @@ app.post("/register", async (req, res) => {
 });
 
 app.post("/login", async (req, res) => {
-  // console.log("regist HIT YO");
-  console.log("login req: ", req.body);
   // const hashedPassword = await bcrypt.hash(req.body.password, 10);
   //  const user = users.find((user) => (user.name = req.query.name));
   const user = await User.findOne({ username: req.body.username });
-  console.log("user to log in is: ", user);
   if (user == null) {
-    console.log("user is null.");
     return res.status(400).send("cannot find user");
   }
 
   if (await bcrypt.compare(req.body.password, user.password)) {
-    console.log("password matches!");
-
     const token = jwt.sign({ _id: user._id }, APP_SECRET);
     const responseObject = {
       user: {
@@ -162,49 +200,6 @@ app.post("/login", async (req, res) => {
   } catch {
     res.status(500).send();
   }
-  // const newUser = new User({
-  //   username: req.body.username,
-  //   password: hashedPassword,
-  //   email: req.body.username + "@" + req.body.username + ".com",
-  // });
-
-  // // console.log("newUser: ", newUser);
-
-  // const token = jwt.sign({ _id: newUser._id }, APP_SECRET);
-  // console.log("token from jwt.sign: ", "|" + token + "|");
-  // const responseObject = {
-  //   user: {
-  //     _id: newUser._id,
-  //     username: newUser.username,
-  //     token: token,
-  //   },
-  // };
-
-  // newUser.save(function (err, user) {
-  //   if (err) {
-  //     // console.log("There was an error: ", err);
-  //     return err;
-  //   } else {
-  //     // console.log("No error. check db for user");
-  //   }
-  // });
-
-  // res.send(JSON.stringify(responseObject));
-
-  // // res.send(JSON.stringify(sentData));
-  // // const user = users.find((user) => (user.name = req.query.name));
-  // // if (user == null) {
-  // //   return res.status(400).send("cannot find user");
-  // // }
-  // try {
-  //   if (await bcrypt.compare(req.body.password, user.password)) {
-  //     res.send("success");
-  //   } else {
-  //     res.send("not allowed");
-  //   }
-  // } catch {
-  //   res.status(500).send();
-  // }
 });
 
 app.post("/users/login", async (req, res) => {
