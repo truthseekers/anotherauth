@@ -109,22 +109,38 @@ app.get("/books", async (req, res) => {
 });
 
 app.put("/list-items/:bookId", async (req, res) => {
+  console.log("****************** BEGIN *****************");
   const token = req.headers.authorization.replace("Bearer ", "");
   const { _id } = jwt.verify(token, APP_SECRET);
 
   const user = await User.findById(_id); //User.find({ _id });
-  console.log("req.params in mark as read: ", req.params);
+  // console.log("req.params in mark as read: ", req.params);
+  console.log("req.body: ", req.body);
+  console.log("req.params: ", req.params);
   // edit the books array elem. then save the user.
   let foundIndex = user.books.findIndex(
     (elem) => elem.bookId == req.params.bookId
   );
-  console.log("user.books elem BEFORE: ", user.books[foundIndex].finishDate);
+  // console.log("user.books elem BEFORE: ", user.books[foundIndex].finishDate);
 
   user.books[foundIndex].finishDate = user.books[foundIndex].finishDate
     ? null
     : Date.now();
-  console.log("user.books elem AFTER: ", user.books[foundIndex].finishDate);
+  if (req.body.notes) {
+    user.books[foundIndex].notes = req.body.notes;
+  }
+  // console.log("user.books elem AFTER: ", user.books[foundIndex].finishDate);
+
+  // I only need the rating stuff. I might even get away with just sending an empty object.
   user.save();
+  res.send(
+    JSON.stringify({
+      listItem: {
+        ...user.books[foundIndex],
+      },
+    })
+  );
+  console.log("****************** END *****************");
 
   // console.log("book to mark as read: ", user.books[foundIndex]);
 });
@@ -152,6 +168,37 @@ app.delete("/list-items/:bookId", async (req, res) => {
   res.send(JSON.stringify(emptyObj));
 });
 
+app.get("/books/:bookId", async (req, res) => {
+  // const token = req.headers.authorization.replace("Bearer ", "");
+  // const { _id } = jwt.verify(token, APP_SECRET);
+
+  // const user = await User.findById(_id); //User.find({ _id });
+
+  // let currentBook = user.books.find((elem) => {
+  //   return elem.bookId == req.params.bookId;
+  // });
+
+  axios
+    .get(`https://www.googleapis.com/books/v1/volumes/${req.params.bookId}`)
+    .then(({ data }) => {
+      // console.log("data from axios: ", data);
+      res.send(
+        JSON.stringify({
+          book: {
+            author: data.volumeInfo.authors
+              ? data.volumeInfo.authors[0]
+              : "unknown author",
+            coverImageUrl: data.volumeInfo.imageLinks.thumbnail,
+            id: data.id,
+            pageCount: data.volumeInfo.pageCount,
+            publisher: data.volumeInfo.publisher,
+            synopsis: data.volumeInfo.description,
+            title: data.volumeInfo.title,
+          },
+        })
+      );
+    });
+});
 /*
 Messy code inside. I'm running a separate request for each book to the Google api to get the list of all the books in the users list.
 Because I have additional information like "rating" and "notes" that are app-specific and not part of the api, we put that information on
@@ -165,6 +212,7 @@ app.get("/list-items", async (req, res) => {
   const user = await User.findById(_id); //User.find({ _id });
   // console.log("user books: ", user.books);
   // console.log("number of books for user: ", user.books.length);
+  // console.log("first book: ", user?.books[0]);
   let promiseArray = [];
   if (!user.books) {
     res.send(JSON.stringify({ nobooks: true }));
@@ -231,7 +279,7 @@ app.post("/list-items", async (req, res) => {
     notes: "",
     ownerId: user.id,
     rating: -1,
-    startDate: Date.now,
+    startDate: Date.now(),
   };
   // console.log("pushing and saving book with id of: ", newListItem.bookId);
   user.books.push(newListItem);

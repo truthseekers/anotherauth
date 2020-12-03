@@ -30,7 +30,7 @@ const UserSchema = new mongoose.Schema({
       notes: String,
       ownerId: String,
       rating: Number,
-      startDate: String,
+      startDate: Date,
     },
   ],
   //give different access rights if admin or not
