@@ -123,11 +123,20 @@ app.put("/list-items/:bookId", async (req, res) => {
   );
   // console.log("user.books elem BEFORE: ", user.books[foundIndex].finishDate);
 
-  user.books[foundIndex].finishDate = user.books[foundIndex].finishDate
-    ? null
-    : Date.now();
+  // user.books[foundIndex].finishDate =
+  //   user.books[foundIndex].finishDate
+  //     ? null
+  //     : Date.now();
+  if (req.body.hasOwnProperty("finishDate")) {
+    user.books[foundIndex].finishDate = user.books[foundIndex].finishDate
+      ? null
+      : Date.now();
+  }
   if (req.body.notes) {
     user.books[foundIndex].notes = req.body.notes;
+  }
+  if (req.body.rating) {
+    user.books[foundIndex].rating = req.body.rating;
   }
   // console.log("user.books elem AFTER: ", user.books[foundIndex].finishDate);
 
