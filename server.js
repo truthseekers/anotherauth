@@ -118,8 +118,14 @@ app.put("/list-items/:bookId", async (req, res) => {
   let foundIndex = user.books.findIndex(
     (elem) => elem.bookId == req.params.bookId
   );
-  user.books[foundIndex].finishDate = Date.now();
+  console.log("user.books elem BEFORE: ", user.books[foundIndex].finishDate);
+
+  user.books[foundIndex].finishDate = user.books[foundIndex].finishDate
+    ? null
+    : Date.now();
+  console.log("user.books elem AFTER: ", user.books[foundIndex].finishDate);
   user.save();
+
   // console.log("book to mark as read: ", user.books[foundIndex]);
 });
 
