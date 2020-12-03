@@ -108,25 +108,8 @@ app.get("/books", async (req, res) => {
   // res.send(JSON.stringify(books));
 });
 
-app.delete("/list-items/:bookId", async (req, res) => {
-  const token = req.headers.authorization.replace("Bearer ", "");
-  const { _id } = jwt.verify(token, APP_SECRET);
-
-  const user = await User.findById(_id); //User.find({ _id });
-
-  const newBooks = user.books.filter((elem) => {
-    return elem.bookId !== req.params.bookId;
-  });
-
-  // console.log("currentBooks: ", user.books);
-  // console.log("NEW books: ", newBooks);
-
-  user.books = newBooks;
-  user.save();
-
-  // console.log("user to delete a book for: ", user);
-
-  // console.log("req.params in delete: ", req.params);
+app.delete("/list-items/:bookId", (req, res) => {
+  console.log("req.params in delete: ", req.params);
   let emptyObj = { yup: "needs something" };
   res.send(JSON.stringify(emptyObj));
 });
@@ -143,13 +126,10 @@ app.get("/list-items", async (req, res) => {
 
   const user = await User.findById(_id); //User.find({ _id });
   // console.log("user books: ", user.books);
-  // console.log("number of books for user: ", user.books.length);
+  console.log("number of books for user: ", user.books.length);
   let promiseArray = [];
-  if (!user.books) {
-    res.send(JSON.stringify({ nobooks: true }));
-  }
   user.books.forEach((elem) => {
-    // console.log(elem.bookId);
+    console.log(elem.bookId);
     let promiseObj = axios.get(
       `https://www.googleapis.com/books/v1/volumes/${elem.bookId}`
     );
@@ -157,7 +137,7 @@ app.get("/list-items", async (req, res) => {
       bookId: elem.bookId,
       finishDate: elem.finishDate,
       notes: elem.notes,
-      id: elem.bookId, // this might break something.
+      id: elem.bookId,
       ownerId: elem.ownerId,
       rating: elem.rating,
       startDate: elem.startDate,
@@ -165,37 +145,36 @@ app.get("/list-items", async (req, res) => {
     promiseArray.push(promiseObj);
   });
 
-  // console.log("promiseArray.length: ", promiseArray.length);
+  console.log("promiseArray.length: ", promiseArray.length);
 
-  Promise.all(promiseArray).then((values) => {
-    let booksList = [];
-    values.forEach((elem, index) => {
-      // console.log(`title: ${elem.data.volumeInfo.title}`);
-      // console.log(`author: ${elem.data.volumeInfo.author}`);
-      // console.log("authors?: ", elem.data.volumeInfo.authors);
-      let listItem = {
-        book: {
-          title: elem.data.volumeInfo.title,
-          author: elem.data.volumeInfo.authors
-            ? elem.data.volumeInfo.authors[0]
-            : "author unknown",
-          coverImageUrl: elem.data.volumeInfo.imageLinks.thumbnail,
-          id: elem.data.id,
-          pageCount: elem.data.volumeInfo.pageCount,
-          publisher: elem.data.volumeInfo.publisher,
-          synopsis: elem.data.volumeInfo.description,
-        },
-        ...promiseArray[index].bookInfo,
+  Promise.all(promiseArray)
+    .then((values) => {
+      let booksList = [];
+      values.forEach((elem, index) => {
+        let listItem = {
+          book: {
+            title: elem.data.volumeInfo.title,
+            author: elem.data.volumeInfo.authors[0],
+            coverImageUrl: elem.data.volumeInfo.imageLinks.thumbnail,
+            id: elem.data.id,
+            pageCount: elem.data.volumeInfo.pageCount,
+            publisher: elem.data.volumeInfo.publisher,
+            synopsis: elem.data.volumeInfo.description,
+          },
+          ...promiseArray[index].bookInfo,
+        };
+        booksList.push(listItem);
+      });
+
+      const listItems = {
+        listItems: booksList,
       };
-      booksList.push(listItem);
+
+      res.send(JSON.stringify(listItems));
+    })
+    .catch((error) => {
+      // console.log("error: ", error);
     });
-
-    const listItems = {
-      listItems: booksList,
-    };
-
-    res.send(JSON.stringify(listItems));
-  });
 });
 
 app.post("/list-items", async (req, res) => {
