@@ -30,52 +30,50 @@ const UserSchema = new mongoose.Schema({
       notes: String,
       ownerId: String,
       rating: Number,
-      startDate: Date,
+      startDate: String,
     },
   ],
   //give different access rights if admin or not
   //   isAdmin: Boolean,
 });
 
-listItems: [
-  {
-    book: {
-      title: "Lord of the rings",
-      author: "J R Tolkien",
-      coverImageUrl:
-        "https://images-na.ssl-images-amazon.com/images/I/51r6XIPWmoL._SX331_BO1,204,203,200_.jpg",
-      id: "618645616",
-      pageCount: 1178,
-      publisher: "Houghton Mifflen Harcourt",
-      synopsis: "everyone wants a ring",
-    },
-    bookId: "618645616",
-    finishDate: null,
-    id: "26023228424",
-    notes: "Cool book yo",
-    ownerId: "5fc6aca2355c5920ccb210c7",
-    rating: -1,
-    startDate: 1606932788305,
-  },
-],
-  //custom method to generate authToken
-  // UserSchema.methods.generateAuthToken = function () {
-  //   const token = jwt.sign({ _id: this._id }, config.get("myprivatekey")); //get the private key from the config file -> environment variable
-  //   console.log("when does this happen?");
-  //   return token;
-  // };
+// listItems: [
+//   {
+//     book: {
+//       title: "Lord of the rings",
+//       author: "J R Tolkien",
+//       coverImageUrl:
+//         "https://images-na.ssl-images-amazon.com/images/I/51r6XIPWmoL._SX331_BO1,204,203,200_.jpg",
+//       id: "618645616",
+//       pageCount: 1178,
+//       publisher: "Houghton Mifflen Harcourt",
+//       synopsis: "everyone wants a ring",
+//     },
+//     bookId: "618645616",
+//     finishDate: null,
+//     id: "26023228424",
+//     notes: "Cool book yo",
+//     ownerId: "5fc6aca2355c5920ccb210c7",
+//     rating: -1,
+//     startDate: 1606932788305,
+//   },
+// ],
+//custom method to generate authToken
+// UserSchema.methods.generateAuthToken = function () {
+//   const token = jwt.sign({ _id: this._id }, config.get("myprivatekey")); //get the private key from the config file -> environment variable
+//   return token;
+// };
 
-  // *************************** help with the _id to id thing **************
-  // Duplicate the ID field.
-  // UserSchema.virtual("id").get(function () {
-  //   console.log("hello pleaseo");
-  //   return this._id.toHexString();
-  // });
+// *************************** help with the _id to id thing **************
+// Duplicate the ID field.
+// UserSchema.virtual("id").get(function () {
+//   return this._id.toHexString();
+// });
 
-  // Ensure virtual fields are serialised.
-  UserSchema.set("toJSON", {
-    virtuals: true,
-  });
+// Ensure virtual fields are serialised.
+UserSchema.set("toJSON", {
+  virtuals: true,
+});
 
 const User = mongoose.model("User", UserSchema);
 

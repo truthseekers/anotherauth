@@ -59,12 +59,9 @@ app.post("/users", async (req, res) => {
 // synopsis
 
 app.get("/books", async (req, res) => {
-  console.log("hit books");
-  // console.log("req obj: req.body: ", req.query);
   let searchQuery = req.query.query;
   if (searchQuery) {
     searchQuery = searchQuery.replace(" ", "+");
-    // console.log("searchQuery: ", searchQuery);
   } else {
     let random = [
       "love",
@@ -86,7 +83,6 @@ app.get("/books", async (req, res) => {
   axios
     .get(`https://www.googleapis.com/books/v1/volumes?q=${searchQuery}`)
     .then(function (response) {
-      // console.log("repsonse from google books: ", response.data.items);
       const volumeList = response.data.items;
 
       const responseObj = {
@@ -94,14 +90,6 @@ app.get("/books", async (req, res) => {
       };
 
       volumeList.forEach(function (elem) {
-        // console.log(elem);
-        // console.log("title: ", elem.volumeInfo.title);
-        // console.log("thumbnail: ", elem.volumeInfo.imageLinks.thumbnail);
-        // console.log("author: ", elem.volumeInfo.authors);
-        console.log("needed id: ", elem.id);
-        // console.log("pageCount: ", elem.volumeInfo.pageCount);
-        // console.log("publisher: ", elem.volumeInfo.publisher);
-        // console.log("synopsis: ", elem.volumeInfo.description);
         let newBook = {
           title: elem.volumeInfo.title,
           coverImageUrl: elem.volumeInfo.imageLinks.thumbnail,
@@ -121,55 +109,48 @@ app.get("/books", async (req, res) => {
 });
 
 app.get("/list-items", async (req, res) => {
-  // console.log("in list-items server");
-  let booksList = [];
+  // console.log("one ");
   const token = req.headers.authorization.replace("Bearer ", "");
-  // console.log("token: ", "|" + token + "|");
   const { _id } = jwt.verify(token, APP_SECRET);
 
   const user = await User.findById(_id); //User.find({ _id });
+  // console.log("user books: ", user.books);
 
-  // console.log("users book with dynamic data: ", user.books[0]);
+  let [u1, u2, u3, u4] = await Promise.all([
+    axios.get("https://www.googleapis.com/books/v1/volumes/gzqXdHXxxeAC"),
+    axios.get("https://www.googleapis.com/books/v1/volumes/0n67AAAAIAAJ"),
+    axios.get("https://www.googleapis.com/books/v1/volumes/BbTiwQEACAAJ"),
+    axios.get("https://www.googleapis.com/books/v1/volumes/2jtvmYDrhoQC"),
+  ]);
 
-  user.books.forEach(function (elem) {
+  let booksList = [];
+  let promiseArray = [u1, u2, u3, u4];
+  // top section comes from the promises.
+  // bottom section comes from.... user.books??
+  promiseArray.forEach((elem) => {
     let listItem = {
       book: {
-        title: "Lord of the rings",
-        author: "J R Tolkien",
-        coverImageUrl:
-          "https://images-na.ssl-images-amazon.com/images/I/51r6XIPWmoL._SX331_BO1,204,203,200_.jpg",
-        id: "618645616",
-        pageCount: 1178,
-        publisher: "Houghton Mifflen Harcourt",
-        synopsis: "everyone wants a ring",
-      },
-      bookId: elem.bookId,
-      finishDate: elem.finishDate,
-      // id: "26023228424",
-      notes: elem.notes,
-      ownerId: elem.ownerId,
-      rating: elem.rating,
-      startDate: elem.startDate,
+        title: elem.data.volumeInfo.title,
+        author: elem.data.volumeInfo.authors[0],
+        coverImageUrl: elem.data.volumeInfo.imageLinks.thumbnail,
+        id: elem.data.id,
+        pageCount: elem.data.volumeInfo.pageCount,
+        publisher: elem.data.volumeInfo.publisher,
+        synopsis: elem.data.volumeInfo.description,
+      }, /// these are different?
+      bookId: user.books[0].bookId,
+      finishDate: user.books[0].finishDate,
+      ////// id: "26023228424",
+      notes: user.books[0].notes,
+      ownerId: user.books[0].ownerId,
+      rating: user.books[0].rating,
+      startDate: user.books[0].startDate,
     };
-    // console.log("list item here: ", listItem);
     booksList.push(listItem);
   });
 
-  console.log("length of array: ", booksList.length);
-
-  // let myReq = await axios.get(
-  //   // "https://www.googleapis.com/books/v1/volumes?q=poop"
-  //   "https://www.googleapis.com/books/v1/volumes/2jtvmYDrhoQC"
-  // );
-
-  // console.log("my reading list yup: ", myReq.data);
-
-  // const currentBook = await axios.get(
-  //   `https://www.googleapis.com/books/v1/volumes/${user.books[0].bookId}`
-  // );
-
-  // console.log("currentBook: ", currentBook);
-
+  console.log("pushing to booksList");
+  console.log("booksList: ", booksList.length);
   const listItems = {
     listItems: booksList,
   };
@@ -177,62 +158,44 @@ app.get("/list-items", async (req, res) => {
   res.send(JSON.stringify(listItems));
 });
 
-// book: {
-//   title: "Lord of the rings",
-//   author: "J R Tolkien",
-//   coverImageUrl:
-//     "https://images-na.ssl-images-amazon.com/images/I/51r6XIPWmoL._SX331_BO1,204,203,200_.jpg",
-//   id: "618645616",
-//   pageCount: 1178,
-//   publisher: "Houghton Mifflen Harcourt",
-//   synopsis: "everyone wants a ring",
-// },
-
 app.post("/list-items", async (req, res) => {
-  // console.log("in list-items server hello?");
-
   const token = req.headers.authorization.replace("Bearer ", "");
-  // console.log("token: ", "|" + token + "|");
   const { _id } = jwt.verify(token, APP_SECRET);
-  // console.log("users _id is: ", _id);
   const user = await User.findById(_id); //User.find({ _id });
-
+  // console.log("req of post listItems: ", req.body);
   let newListItem = {
-    bookId: "618645616",
+    bookId: req.body.bookId,
     finishDate: null,
     id: "26023228424",
-    notes: "Cool book yo",
-    ownerId: "5fc6aca2355c5920ccb210c7",
+    notes: "",
+    ownerId: user.id,
     rating: -1,
-    startDate: 1606932788305,
+    startDate: Date.now,
   };
-
+  // console.log("pushing and saving book with id of: ", newListItem.bookId);
   user.books.push(newListItem);
   user.save();
-  // console.log("User saved!");
   const listItems = {
-    listItems: [
-      {
-        bookId: "618645616",
-        finishDate: null,
-        id: "26023228424",
-        notes: "Cool book yo",
-        ownerId: "5fc6aca2355c5920ccb210c7",
-        rating: -1,
-        startDate: 1606932788305,
-      },
-    ],
+    listItems: [newListItem],
+    // listItems: [
+    //   {
+    //     bookId: "618645616",
+    //     finishDate: null,
+    //     id: "26023228424",
+    //     notes: "Cool book yo",
+    //     ownerId: "5fc6aca2355c5920ccb210c7",
+    //     rating: -1,
+    //     startDate: 1606932788305,
+    //   },
+    // ],
   };
 
   res.send(JSON.stringify(listItems));
 });
 
 app.get("/bootstrap", async (req, res) => {
-  // console.log("top of /bootstrap");
   const token = req.headers.authorization.replace("Bearer ", "");
-  // console.log("token in bootstrap: ", "|" + token + "|");
   const { _id } = jwt.verify(token, APP_SECRET);
-  // console.log("id of user: ", _id);
   const user = await User.findById(_id); //User.find({ _id });
 
   user.id = user._id;
@@ -246,7 +209,6 @@ app.get("/bootstrap", async (req, res) => {
       username: user.username,
     },
   };
-  // console.log("Ready to send er back!");
   res.send(JSON.stringify(returnObj));
 });
 
