@@ -108,6 +108,21 @@ app.get("/books", async (req, res) => {
   // res.send(JSON.stringify(books));
 });
 
+app.put("/list-items/:bookId", async (req, res) => {
+  const token = req.headers.authorization.replace("Bearer ", "");
+  const { _id } = jwt.verify(token, APP_SECRET);
+
+  const user = await User.findById(_id); //User.find({ _id });
+  console.log("req.params in mark as read: ", req.params);
+  // edit the books array elem. then save the user.
+  let foundIndex = user.books.findIndex(
+    (elem) => elem.bookId == req.params.bookId
+  );
+  user.books[foundIndex].finishDate = Date.now();
+  user.save();
+  // console.log("book to mark as read: ", user.books[foundIndex]);
+});
+
 app.delete("/list-items/:bookId", async (req, res) => {
   const token = req.headers.authorization.replace("Bearer ", "");
   const { _id } = jwt.verify(token, APP_SECRET);
