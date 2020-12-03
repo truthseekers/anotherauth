@@ -115,47 +115,83 @@ app.get("/list-items", async (req, res) => {
 
   const user = await User.findById(_id); //User.find({ _id });
   // console.log("user books: ", user.books);
-
-  let [u1, u2, u3, u4] = await Promise.all([
-    axios.get("https://www.googleapis.com/books/v1/volumes/gzqXdHXxxeAC"),
-    axios.get("https://www.googleapis.com/books/v1/volumes/0n67AAAAIAAJ"),
-    axios.get("https://www.googleapis.com/books/v1/volumes/BbTiwQEACAAJ"),
-    axios.get("https://www.googleapis.com/books/v1/volumes/2jtvmYDrhoQC"),
-  ]);
-
-  let booksList = [];
-  let promiseArray = [u1, u2, u3, u4];
-  // top section comes from the promises.
-  // bottom section comes from.... user.books??
-  promiseArray.forEach((elem) => {
-    let listItem = {
-      book: {
-        title: elem.data.volumeInfo.title,
-        author: elem.data.volumeInfo.authors[0],
-        coverImageUrl: elem.data.volumeInfo.imageLinks.thumbnail,
-        id: elem.data.id,
-        pageCount: elem.data.volumeInfo.pageCount,
-        publisher: elem.data.volumeInfo.publisher,
-        synopsis: elem.data.volumeInfo.description,
-      }, /// these are different?
-      bookId: user.books[0].bookId,
-      finishDate: user.books[0].finishDate,
-      ////// id: "26023228424",
-      notes: user.books[0].notes,
-      ownerId: user.books[0].ownerId,
-      rating: user.books[0].rating,
-      startDate: user.books[0].startDate,
-    };
-    booksList.push(listItem);
+  console.log("number of books for user: ", user.books.length);
+  let promiseArray = [];
+  user.books.forEach((elem) => {
+    console.log(elem.bookId);
+    let promiseObj = axios.get(
+      `https://www.googleapis.com/books/v1/volumes/${elem.bookId}`
+    );
+    promiseArray.push(promiseObj);
   });
+
+  console.log("promiseArray.length: ", promiseArray.length);
+
+  Promise.all(promiseArray).then((values) => {
+    console.log("values in promise.all: ", values[0].data);
+    let booksList = [];
+    values.forEach((elem) => {
+      let listItem = {
+        book: {
+          title: elem.data.volumeInfo.title,
+          author: elem.data.volumeInfo.authors[0],
+          coverImageUrl: elem.data.volumeInfo.imageLinks.thumbnail,
+          id: elem.data.id,
+          pageCount: elem.data.volumeInfo.pageCount,
+          publisher: elem.data.volumeInfo.publisher,
+          synopsis: elem.data.volumeInfo.description,
+        }, /// these are different?
+        bookId: user.books[0].bookId,
+        finishDate: user.books[0].finishDate,
+        ////// id: "26023228424",
+        notes: user.books[0].notes,
+        ownerId: user.books[0].ownerId,
+        rating: user.books[0].rating,
+        startDate: user.books[0].startDate,
+      };
+      booksList.push(listItem);
+    });
+
+    const listItems = {
+      listItems: booksList,
+    };
+
+    res.send(JSON.stringify(listItems));
+  });
+  // let [u1, u2, u3, u4] = await Promise.all([
+  //   axios.get("https://www.googleapis.com/books/v1/volumes/gzqXdHXxxeAC"),
+  //   axios.get("https://www.googleapis.com/books/v1/volumes/0n67AAAAIAAJ"),
+  //   axios.get("https://www.googleapis.com/books/v1/volumes/BbTiwQEACAAJ"),
+  //   axios.get("https://www.googleapis.com/books/v1/volumes/2jtvmYDrhoQC"),
+  // ]);
+
+  // let booksList = [];
+  // // top section comes from the promises.
+  // // bottom section comes from.... user.books??
+  // promiseArray.forEach((elem) => {
+  //   let listItem = {
+  //     book: {
+  //       title: elem.data.volumeInfo.title,
+  //       author: elem.data.volumeInfo.authors[0],
+  //       coverImageUrl: elem.data.volumeInfo.imageLinks.thumbnail,
+  //       id: elem.data.id,
+  //       pageCount: elem.data.volumeInfo.pageCount,
+  //       publisher: elem.data.volumeInfo.publisher,
+  //       synopsis: elem.data.volumeInfo.description,
+  //     }, /// these are different?
+  //     bookId: user.books[0].bookId,
+  //     finishDate: user.books[0].finishDate,
+  //     ////// id: "26023228424",
+  //     notes: user.books[0].notes,
+  //     ownerId: user.books[0].ownerId,
+  //     rating: user.books[0].rating,
+  //     startDate: user.books[0].startDate,
+  //   };
+  //   booksList.push(listItem);
+  // });
 
   console.log("pushing to booksList");
   console.log("booksList: ", booksList.length);
-  const listItems = {
-    listItems: booksList,
-  };
-
-  res.send(JSON.stringify(listItems));
 });
 
 app.post("/list-items", async (req, res) => {
